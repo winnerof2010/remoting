@@ -25,6 +25,7 @@ package hudson.remoting;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -401,7 +402,8 @@ final class RemoteClassLoader extends URLClassLoader {
         }
 
         public ClassFile fetch2(String className) throws ClassNotFoundException {
-            ClassLoader ecl = cl.loadClass(className).getClassLoader();
+            Class<?> c = cl.loadClass(className);
+            ClassLoader ecl = c.getClassLoader();
             if (ecl == null) {
             	if (USE_BOOTSTRAP_CLASSLOADER) {
             		ecl = PSEUDO_BOOTSTRAP;
@@ -411,9 +413,19 @@ final class RemoteClassLoader extends URLClassLoader {
             }
 
             try {
+                byte[] images;
+                if (channel.remoteCapability.requireDexFile()) {
+                    File jar = Which.jarFile(c);
+                    // TODO: somehow obtain the dex file that corresponds to classes in this jar
+                    File dex = jar;
+                    images = readFully(new FileInputStream(dex));
+                } else {
+                    images = readFully(ecl.getResourceAsStream(className.replace('.', '/') + ".class"));
+                }
+
                 return new ClassFile(
                         exportId(ecl,channel),
-                        readFully(ecl.getResourceAsStream(className.replace('.', '/') + ".class")));
+                        images);
             } catch (IOException e) {
                 throw new ClassNotFoundException();
             }

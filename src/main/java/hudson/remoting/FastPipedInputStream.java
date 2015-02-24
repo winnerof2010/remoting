@@ -41,7 +41,7 @@ public class FastPipedInputStream extends InputStream {
     /**
      * Once closed, this is set to the stack trace of who closed it.
      */
-    ClosedBy closed = null;
+    volatile ClosedBy closed = null;
     int readLaps = 0;
     int readPosition = 0;
     WeakReference<FastPipedOutputStream> source;
@@ -105,14 +105,18 @@ public class FastPipedInputStream extends InputStream {
      */
     @Override
     public void close() throws IOException {
+        System.out.println("in close() on FPIS, closed == null = " + (closed == null));
         if(source == null) {
             throw new IOException("Unconnected pipe");
         }
         synchronized(buffer) {
             closed = new ClosedBy(null);
+            System.out.println("closed is non-null FPIS");
+
             // Release any pending writers.
             buffer.notifyAll();
         }
+        System.out.println("returning from close() on FPIS");
     }
 
     /**

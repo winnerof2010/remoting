@@ -65,15 +65,35 @@ public class PipeTest extends RmiTestBase implements Serializable {
     @Bug(8592)
     @For(Pipe.class)
     public void testReaderCloseWhileWriterIsStillWriting() throws Exception {
+        System.out.flush();
+        System.err.flush();
+        System.out.println("*****************************************************************************************");
         final Pipe p = Pipe.createRemoteToLocal();
         final Future<Void> f = channel.callAsync(new InfiniteWriter(p));
         final InputStream in = p.getIn();
         assertEquals(in.read(), 0);
+        java.lang.management.ThreadMXBean mxb = (java.lang.management.ThreadMXBean) java.lang.management.ManagementFactory.getPlatformMXBeans(java.lang.management.ThreadMXBean.class).get(0);
+        Object[] objs = mxb.dumpAllThreads(true, true);
+        for (Object obj : objs) {
+            System.out.println(obj);
+        }
+        System.out.flush();
+        System.err.flush();
         in.close();
 
         try {
-            f.get();
-            fail();
+            while (true) {
+                try {
+                    f.get(5, java.util.concurrent.TimeUnit.MINUTES);
+                    fail();
+                }
+                catch (java.util.concurrent.TimeoutException ex) {
+                    // timeout
+                    System.out.println("timeout...");
+                    // should throw an exception...
+                    p.getIn().close(); 
+                }
+            }
         } catch (ExecutionException e) {
             // should have resulted in an IOException
             if (!(e.getCause() instanceof IOException)) {

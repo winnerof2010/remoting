@@ -86,10 +86,12 @@ public class FastPipedOutputStream extends OutputStream implements ErrorPropagat
      */
     @Override
     public void close() throws IOException {
+        System.out.println("in close() on FPOS");
         error(null);
     }
 
     public void error(Throwable e) throws IOException {
+        System.out.println("in close(Throwable) on FPOS");
         if(sink == null) {
             throw new IOException("Unconnected pipe");
         }
@@ -97,9 +99,12 @@ public class FastPipedOutputStream extends OutputStream implements ErrorPropagat
         synchronized(s.buffer) {
             if (s.closed==null) {
                 s.closed = new FastPipedInputStream.ClosedBy(e);
+                System.out.println("s.close non-null FPOS");
                 flush();
             }
         }
+        System.out.println("returning from error(Throwable) FPOS");
+
     }
 
     /**

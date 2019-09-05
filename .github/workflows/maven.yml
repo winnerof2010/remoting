@@ -9,13 +9,9 @@ jobs:
 
     steps:
     - name: test
-      run: df && ps -ef&&ifconfig&& docker info
+      run: uptime&& mount&&df && ps -ef&&ifconfig&& docker info
     - uses: actions/checkout@v1
     - name: Set up JDK 1.8
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
-    - name: Build with Maven
-      uses: LucaFeger/action-maven-cli@master
-      with:
-        args: clean package
